@@ -15,62 +15,58 @@ import jakarta.servlet.http.HttpServletResponse;
 public class BuscarProdutoController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
+	private static final int DEFAULT_PAGE_SIZE = 10;
+	private static final int MIN_PAGE_SIZE = 10;
+	private static final int MAX_PAGE_SIZE = 100;
+
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if (request.getParameterMap().isEmpty()) { /* É a primeira chamada? */
+		if (request.getParameterMap().isEmpty()) {
 			start(request, response);
 		} else {
 			search(request, response);
 		}
-		
 	}
 
 	private void search(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String paramDescricao = request.getParameter("descricao");
-		String paramPrecoMinimo = request.getParameter("precoMinimo");
-		String paramPrecoMaximo = request.getParameter("precoMaximo");
-		String paramPage = request.getParameter("page");
-		String paramPageSize = request.getParameter("pageSize");
-		
 		BuscarProdutoForm form = new BuscarProdutoForm();
+
+		String paramDescricao = request.getParameter("descricao");
 		if (paramDescricao != null) {
 			form.setDescricao(paramDescricao);
 		}
-		
-		if (paramPrecoMinimo != null && !paramPrecoMinimo.isBlank()) {
-			form.setPrecoMinimo(Double.parseDouble(paramPrecoMinimo));
+
+		Double precoMinimo = parseDoubleOrNull(request.getParameter("precoMinimo"));
+		if (precoMinimo != null) {
+			form.setPrecoMinimo(precoMinimo);
 		}
 
-		if (paramPrecoMaximo != null && !paramPrecoMaximo.isBlank()) {
-			form.setPrecoMaximo(Double.parseDouble(paramPrecoMaximo));
-		}
-		
-		if (paramPage != null) {
-			int page = Integer.parseInt(paramPage);
-			if (page < 1) {
-				page = 1;
-			}
-			form.setPage(page);
+		Double precoMaximo = parseDoubleOrNull(request.getParameter("precoMaximo"));
+		if (precoMaximo != null) {
+			form.setPrecoMaximo(precoMaximo);
 		}
 
-		if (paramPageSize != null) {
-			int pageSize = Integer.parseInt(paramPageSize);
-			if (pageSize < 10 || pageSize > 100) {
-				pageSize = 10;
+		Integer page = parseIntOrNull(request.getParameter("page"));
+		if (page != null) {
+			form.setPage(page < 1 ? 1 : page);
+		}
+
+		Integer pageSize = parseIntOrNull(request.getParameter("pageSize"));
+		if (pageSize != null) {
+			if (pageSize < MIN_PAGE_SIZE || pageSize > MAX_PAGE_SIZE) {
+				pageSize = DEFAULT_PAGE_SIZE;
 			}
 			form.setPageSize(pageSize);
 		}
 
-		
 		ProdutoService service = new ProdutoService();
 		List<ProdutoDTO> produtos = service.search(form);
 		int totalItens = service.totalItens(form);
-		
+
 		request.setAttribute("produtos", produtos);
 		request.setAttribute("totalItens", totalItens);
-		
 		request.setAttribute("form", form);
-		
+
 		ViewHelper.forward("produto/buscarProduto.jsp", request, response);
 	}
 
@@ -78,5 +74,26 @@ public class BuscarProdutoController extends HttpServlet {
 		request.setAttribute("form", new BuscarProdutoForm());
 		ViewHelper.forward("produto/buscarProduto.jsp", request, response);
 	}
-}
 
+	private static Double parseDoubleOrNull(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+		try {
+			return Double.parseDouble(value);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	private static Integer parseIntOrNull(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+		try {
+			return Integer.parseInt(value);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+}

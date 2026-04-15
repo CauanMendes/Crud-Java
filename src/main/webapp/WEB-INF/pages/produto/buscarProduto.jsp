@@ -1,152 +1,95 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
-<%@ page import="edu.ifsp.loja.controllers.produto.BuscarProdutoForm"%>
-<%@ page import="edu.ifsp.loja.controllers.produto.ProdutoDTO"%>
-<%@ page import="edu.ifsp.loja.util.StringUtil"%>
-<%@ page import="java.util.List"%>
-
-<%
-BuscarProdutoForm form = (BuscarProdutoForm) request.getAttribute("form");
-%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="edu.ifsp.loja.controllers.produto.BuscarProdutoForm" %>
+<%@ page import="edu.ifsp.loja.controllers.produto.ProdutoDTO" %>
+<%@ page import="edu.ifsp.loja.util.StringUtil" %>
+<%@ page import="java.util.List" %>
+<% BuscarProdutoForm form = (BuscarProdutoForm) request.getAttribute("form"); %>
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Loja Web2</title>
-<script>
-function gotoPage(page) {
-	const form = document.querySelector('#search-form');
-	const pageInput = form.querySelector('input[name="page"]');
-	pageInput.value = page;
-	form.submit();		
-}
+	<meta charset="UTF-8">
+	<title>Loja Web2</title>
+	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
+	<script>
+		function gotoPage(page) {
+			const form = document.querySelector('#search-form');
+			const pageInput = form.querySelector('input[name="page"]');
+			pageInput.value = page;
+			form.submit();
+		}
 
-function movePage(offset) {
-	const currentPage = <%=form.getPage()%>;
-	gotoPage(currentPage + offset);
-	
-}
+		function movePage(offset) {
+			const currentPage = <%= form.getPage() %>;
+			gotoPage(currentPage + offset);
+		}
 
-function nuMovePage(offset) {
-	gotoPage(offset);
-	
-}
-
-
-}
-
-</script>
+		function nuMovePage(offset) {
+			gotoPage(offset);
+		}
+	</script>
 </head>
 <body>
 	<h1>Buscar produtos</h1>
-	<form id="search-form" method="get"
-		action="<%=request.getContextPath()%>/produto/buscar">
-		<label for="descricao">Descrição: </label> <input type="text"
-			name="descricao" id="descricao"
-			value="<%=StringUtil.emptyIfNull(form.getDescricao())%>"> <br>
+	<form id="search-form" method="get" action="<%= request.getContextPath() %>/produto/buscar">
+		<label for="descricao">Descrição: </label>
+		<input type="text" name="descricao" id="descricao"
+			value="<%= StringUtil.htmlEscape(StringUtil.emptyIfNull(form.getDescricao())) %>"><br>
 
-		<label for="preco-minimo">Preço Mínimo: </label> <input type="number"
-			name="precoMinimo" id="preco-minimo"
-			value="<%=form.getPrecoMinimo()%>"> <br> <label
-			for="preco-maximo">Preço Máximo: </label> <input type="number"
-			name="precoMaximo" id="preco-maximo"
-			value="<%=form.getPrecoMaximo()%>"> <br> <label
-			for="pageSize">Número de itens por Página: </label> <input
-			type="number" name="pageSize" id="pageSize"
-			value="<%=form.getPageSize()%>"> <br> <input
-			type="hidden" name="page" value="1"> <input type="hidden"
-			name="pageSize" value="<%=form.getPageSize()%>">
+		<label for="preco-minimo">Preço Mínimo: </label>
+		<input type="number" name="precoMinimo" id="preco-minimo" value="<%= form.getPrecoMinimo() %>"><br>
 
-		<button type="submit" onsubmit="formSubmit();">Buscar</button>
+		<label for="preco-maximo">Preço Máximo: </label>
+		<input type="number" name="precoMaximo" id="preco-maximo" value="<%= form.getPrecoMaximo() %>"><br>
 
+		<label for="pageSize">Itens por página: </label>
+		<input type="number" name="pageSize" id="pageSize" value="<%= form.getPageSize() %>"><br>
 
+		<input type="hidden" name="page" value="1">
+
+		<button type="submit">Buscar</button>
 	</form>
 
 	<%
-	
-	
-	int totalitens = 0;
-
 	if (request.getAttribute("produtos") != null) {
 		List<ProdutoDTO> produtos = (List<ProdutoDTO>) request.getAttribute("produtos");
+		int totalitens = (int) request.getAttribute("totalItens");
 
-		totalitens = (int) request.getAttribute("totalItens");
-		
-		
-		
-		int nPage = 0;
-
+		int nPage;
 		if (totalitens % form.getPageSize() == 0) {
 			nPage = totalitens / form.getPageSize();
 		} else {
 			nPage = (totalitens / form.getPageSize()) + 1;
 		}
+		int paginaAtual = form.getPage();
+		boolean naPrimeira = paginaAtual <= 1;
+		boolean naUltima = paginaAtual >= nPage;
 	%>
-	
-	
-	<br>
 
 	<script>
-let ordemCrescente = true;
+		let ordemCrescente = true;
 
-document.addEventListener("DOMContentLoaded", function () {
-    const thPreco = document.getElementById("th-preco");
+		function ordenarTabelaPreco() {
+			const tbody = document.querySelector("#tabela-produtos tbody");
+			const linhas = Array.from(tbody.querySelectorAll("tr"));
 
-    thPreco.addEventListener("click", function () {
-        ordenarTabelaPreco();
-    });
+			linhas.sort(function (a, b) {
+				const precoA = parseFloat(a.children[2].textContent);
+				const precoB = parseFloat(b.children[2].textContent);
+				return ordemCrescente ? precoA - precoB : precoB - precoA;
+			});
 
-    controlarPaginacao();
-});
+			tbody.innerHTML = "";
+			linhas.forEach(tr => tbody.appendChild(tr));
+			ordemCrescente = !ordemCrescente;
+		}
 
-function ordenarTabelaPreco() {
-    const tbody = document.querySelector("#tabela-produtos tbody");
-    const linhas = Array.from(tbody.querySelectorAll("tr"));
+		document.addEventListener("DOMContentLoaded", function () {
+			const thPreco = document.getElementById("th-preco");
+			thPreco.addEventListener("click", ordenarTabelaPreco);
+		});
+	</script>
 
-    linhas.sort(function (a, b) {
-        const precoA = parseFloat(a.children[2].textContent);
-        const precoB = parseFloat(b.children[2].textContent);
-
-        if (ordemCrescente) {
-            return precoA - precoB;
-        } else {
-            return precoB - precoA;
-        }
-    });
-
-    // limpa tbody
-    tbody.innerHTML = "";
-
-    // reinsere ordenado
-    linhas.forEach(tr => tbody.appendChild(tr));
-
-    // alterna ordem
-    ordemCrescente = !ordemCrescente;
-    
-    function controlarPaginacao() {
-        const paginaAtual = <%=form.getPage()%>;
-        const totalPaginas = <%=nPage%>;
-
-        const primeira = document.getElementById("primeira");
-        const anterior = document.getElementById("anterior");
-        const proxima = document.getElementById("proxima");
-        const ultima = document.getElementById("ultima");
-
-        // Primeira página
-        if (paginaAtual <= 1) {
-            primeira.style.display = "none";
-            anterior.style.display = "none";
-        }
-
-        // Última página
-        if (paginaAtual >= totalPaginas) {
-            proxima.style.display = "none";
-            ultima.style.display = "none";
-        }
-}
-</script>
-
-	<table border="1" id="tabela-produtos">
+	<table id="tabela-produtos">
 		<thead>
 			<tr>
 				<th>ID</th>
@@ -155,59 +98,45 @@ function ordenarTabelaPreco() {
 			</tr>
 		</thead>
 		<tbody>
-			<%
-			for (ProdutoDTO p : produtos) {
-			%>
-			<tr>
-				<td><%=p.id()%></td>
-				<td><%=p.descricao()%></td>
-				<td><%=p.preco()%></td>
-			</tr>
-			<%
-			}
-			%>
+			<% for (ProdutoDTO p : produtos) { %>
+				<tr>
+					<td><%= p.id() %></td>
+					<td><%= StringUtil.htmlEscape(p.descricao()) %></td>
+					<td><%= p.preco() %></td>
+				</tr>
+			<% } %>
 		</tbody>
 	</table>
 
-	<a href="#" id="primeira" onclick="nuMovePage(1)">Primeira Página</a>
-	<br>
+	<div class="pagination">
+		<a href="#" id="primeira"
+			class="<%= naPrimeira ? "disabled" : "" %>"
+			onclick="<%= naPrimeira ? "return false;" : "nuMovePage(1); return false;" %>">Primeira</a>
 
-	<a href="#" id="anterior" onclick="movePage(-1)">Anterior</a>
+		<a href="#" id="anterior"
+			class="<%= naPrimeira ? "disabled" : "" %>"
+			onclick="<%= naPrimeira ? "return false;" : "movePage(-1); return false;" %>">Anterior</a>
 
-	<%
-	
+		<% for (int i = 1; i <= nPage; i++) { %>
+			<a href="#"
+				class="<%= i == paginaAtual ? "disabled" : "" %>"
+				onclick="<%= i == paginaAtual ? "return false;" : "nuMovePage(" + i + "); return false;" %>"><%= i %></a>
+		<% } %>
 
-	for (int i = 1; i <= nPage; i++) {
-	%>
-	<a href="#" onclick="nuMovePage(<%=i%>)"><%=i%></a>
-	<%
-	}
-	%>
+		<a href="#" id="proxima"
+			class="<%= naUltima ? "disabled" : "" %>"
+			onclick="<%= naUltima ? "return false;" : "movePage(1); return false;" %>">Próxima</a>
 
-	<a href="#" id="proxima" onclick="movePage(1)">Próxima</a>
-	<br>
+		<a href="#" id="ultima"
+			class="<%= naUltima ? "disabled" : "" %>"
+			onclick="<%= naUltima ? "return false;" : "nuMovePage(" + nPage + "); return false;" %>">Última</a>
+	</div>
 
-	<a href="#" id="ultima" onclick="nuMovePage(<%=nPage%>)">Última
-		Página</a>
+	<div class="info">Página atual: <%= paginaAtual %> de <%= nPage %></div>
+	<div class="info">Total de registros: <%= totalitens %></div>
 
-	<br>
-
-	<div>
-		Página atual:
-		<%=form.getPage()%></div>
-
-
-
-	<div>
-		Total de Registros:
-		<%=totalitens%></div>
-	<%
-	} else {
-	%>
-	<p>Nenhum resultado encontrado para os critérios informados.</p>
-	<%
-	}
-	%>
-
+	<% } else { %>
+		<p class="empty">Nenhum resultado encontrado para os critérios informados.</p>
+	<% } %>
 </body>
 </html>

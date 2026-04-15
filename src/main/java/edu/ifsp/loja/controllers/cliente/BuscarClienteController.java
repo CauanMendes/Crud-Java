@@ -33,10 +33,11 @@ public class BuscarClienteController  extends HttpServlet {
 	
 	private void search(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String nome = request.getParameter("nome");
-		String paramAtivo = request.getParameter("ativo");
-		boolean ativo = "true".equals(paramAtivo);
-		System.out.println("ativo: " + paramAtivo + ", " + ativo);
-		
+		if (nome == null) {
+			nome = "";
+		}
+		boolean ativo = "true".equals(request.getParameter("ativo"));
+
 		ClienteService service = new ClienteService();
 		BuscarClienteForm searchDTO = new BuscarClienteForm(nome, ativo);
 		List<ClienteDTO> clientes = service.buscar(searchDTO);
