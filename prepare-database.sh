@@ -4,11 +4,11 @@
 
 
 mysql_ping() {
-        mysql --protocol=tcp --port=3306 --user=root --password=root -e "SELECT 1" &> /dev/null
+        mysql --protocol=tcp --port=3307 --user=root --password=root -e "SELECT 1" &> /dev/null
 }
 
 mysql_start() {
-        if [ "$USER" = "cauan" ]; then
+        if [ "$USER" = "aluno" ]; then
 	    sudo /bin/systemctl start mysql.service
         else
             podman start lojadb
@@ -35,4 +35,4 @@ fi
 
 # Criando o banco de dados
 echo "Creating database schema..."
-mysql --protocol=tcp --port=3306 --user=root --password=root < src/main/java/resources/database.sql
+mysql --protocol=tcp --port=3307 --user=root --password=root < src/main/java/resources/database.sql

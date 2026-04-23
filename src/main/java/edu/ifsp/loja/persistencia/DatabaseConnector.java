@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnector {
-	private static final String URL = envOrDefault("DB_URL", "jdbc:mysql://localhost:3306/loja");
+	private static final String URL = envOrDefault("DB_URL", "jdbc:mysql://localhost:3307/loja");
 	private static final String USER = envOrDefault("DB_USER", "root");
 	private static final String PASSWORD = envOrDefault("DB_PASSWORD", "root");
 
